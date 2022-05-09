@@ -3,15 +3,18 @@ using Google.Apis.Gmail.v1;
 using Google.Apis.Services;
 
 namespace Gapis.SA.Core.Services;
-public interface IGoogleServiceProvider {
-  Task<GmailService> InitializeGmailServiceAsync(string serviceAccountId, string superUserId, string[] scopes);
+public interface IGoogleServiceProvider : IDisposable {
+  string ServiceAccountId { get; }
+  Task<GmailService> CreateGmailServiceAsync(string userId, string[] scopes);
 }
 
 public class GoogleServiceProvider : IGoogleServiceProvider, IDisposable {
   private readonly ICertificateProvider? _certificateProvider;
+  public string ServiceAccountId { get; }
 
-  public GoogleServiceProvider(ICertificateProvider? certificateProvider) {
+  public GoogleServiceProvider(ICertificateProvider? certificateProvider, string serviceAccountId) {
     this._certificateProvider = certificateProvider;
+    this.ServiceAccountId = serviceAccountId;
   }
 
   public void Dispose() {
@@ -20,21 +23,20 @@ public class GoogleServiceProvider : IGoogleServiceProvider, IDisposable {
     }
   }
 
-  public async Task<GmailService> InitializeGmailServiceAsync(
-      string serviceAccountId, string superUserId, string[] scopes) {
-    var credential = await InitializeServiceAccountCredentialAsync(serviceAccountId, superUserId, scopes);
+  public async Task<GmailService> CreateGmailServiceAsync(string userId, string[] scopes) {
+    var credential = await InitializeServiceAccountCredentialAsync(userId,scopes);
     return new GmailService(
        new BaseClientService.Initializer() {
-         HttpClientInitializer = credential
+         HttpClientInitializer = credential,
+         
          //????????? ApplicationName = applicationName ?????????
        });
   }
 
-  private async Task<ServiceAccountCredential> InitializeServiceAccountCredentialAsync(
-      string serviceAccountId, string superUserId, string[] scopes) {
+  private async Task<ServiceAccountCredential> InitializeServiceAccountCredentialAsync(string userId, string[] scopes) {
     var credential = new ServiceAccountCredential(
-             new ServiceAccountCredential.Initializer(serviceAccountId) {
-               User = superUserId,
+             new ServiceAccountCredential.Initializer(ServiceAccountId) {
+               User = userId,
                Scopes = scopes
              }.FromCertificate(_certificateProvider?.Certificate));
 
@@ -42,7 +44,7 @@ public class GoogleServiceProvider : IGoogleServiceProvider, IDisposable {
       return credential;
     else
       throw new Exception($"Fail to receive new access token for ServiceAccountCredential" +
-        $"{serviceAccountId} {superUserId}");
+        $"{ServiceAccountId} {userId}");
   }
 
 }

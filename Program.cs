@@ -1,7 +1,12 @@
 using Gapis.SA.Core.Services;
-using Google.Apis.Gmail.v1;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// The full path; name of a certificate file
+string filePath = "[X509 Certificate File]";
+
+// The service account ID (typically an e-mail address like: *@*iam.gserviceaccount.com)
+string serviceAccountId = "[Service Account ID]";
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -9,18 +14,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-string filePath = "";//Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),)
-//string serviceAccountId = "";
-//string superAdminId = "";
 builder.Services.AddSingleton<ICertificateProvider>((provider) => {
   return new CertificateProvider(filePath);
 });
 
-builder.Services.AddTransient<IGoogleServiceProvider>((provider) => {
+builder.Services.AddSingleton<IGoogleServiceProvider>((provider) => {
   var certificte = provider.GetService<ICertificateProvider>();
-  
-  return new GoogleServiceProvider(certificte);
+
+  return new GoogleServiceProvider(certificte, serviceAccountId);
 });
+
+builder.Services.AddTransient<IGmailClientService, GmailClientService>();
 
 var app = builder.Build();
 
@@ -31,7 +35,6 @@ if (app.Environment.IsDevelopment()) {
 }
 
 app.UseHttpsRedirection();
-
 
 app.UseAuthorization();
 

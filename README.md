@@ -1,1 +1,3 @@
-Gapis.SA.Core
+# Gmail API usig Service Account (Google Workspace)
+
+

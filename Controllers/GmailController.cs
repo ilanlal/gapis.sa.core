@@ -1,4 +1,4 @@
-using Gapis.SA.Core.ProxyServices;
+using Gapis.SA.Core.Services;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,11 +6,6 @@ namespace Gapis.SA.Core.Controllers {
   [ApiController]
   [Route("[controller]")]
   public class GmailController : ControllerBase {
-    private static readonly string[] Summaries = new[]
-    {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
-
     private readonly ILogger<GmailController> _logger;
     private readonly IGmailClientService _gmailClient;
 
@@ -20,12 +15,13 @@ namespace Gapis.SA.Core.Controllers {
     }
 
     [HttpGet(Name = "ListThreads")]
-    public IEnumerable<ThreadViewModel> ListThreads() {
-      return _gmailClient.ListThreads().Select(thread => new ThreadViewModel {
+    public async Task<IEnumerable<ThreadViewModel>> ListThreads(string userId) {
+      var res = await _gmailClient.ListThreadsAsync(userId);
+
+      return res.Select(thread => new ThreadViewModel {
         Snippet = thread.Snippet,
         Id = thread.Id,
-      }) 
-      .ToArray();
+      });
     }
   }
 }
